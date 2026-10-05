@@ -516,7 +516,7 @@ function AmountCard(props: {
               <TokenMark
                 src={chainLogoUrl(props.token.blockchain)}
                 label={props.token.blockchain}
-                className="absolute right-0 bottom-0 size-2 rounded-[2px] object-cover"
+                className="absolute right-[-2px] bottom-[-2px] size-3 rounded-[4px] object-cover border border-popover"
               />
             </span>
           ) : (
