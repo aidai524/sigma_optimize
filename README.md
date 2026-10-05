@@ -16,11 +16,18 @@ in the competitor comparison. Built for the Sigma frontend trial task.
 | ID | Improvement | Where |
 | --- | --- | --- |
 | — | **Trend column renders for every row**: the first two rows draw real OHLCV, the rest a deterministic synthetic series, because the free API will not serve one request per row | `components/pulse/Sparkline.tsx`, `lib/synthetic-ohlcv.ts`, `lib/gt.ts` |
-| A2 | **Grouped + labelled token metrics** (Liquidity / Valuation / Activity / Pool) replacing eight unlabelled micro-badges; Liq/MCap ratio highlighted when low | `components/pulse/TokenInfoCell.tsx` |
 | A3 | **Row quick-buy shows the amount** (active preset) instead of being icon-only, with a compact confirm | `components/pulse/QuickBuyButton.tsx` |
-| A4 | **Clean layout mode + comfortable/compact density**, persisted to localStorage | `Toolbar.tsx` |
+| — | **Display density** (comfortable / compact), persisted to localStorage | `components/pulse/Toolbar.tsx` |
 | A6 | **Multiple discovery lenses** (Trending / Surge / Recent) over the same live table | `App.tsx` |
 | B1 | **Instant Trade panel with slippage & priority presets + high-slippage warning** and MEV toggle | `components/pulse/TradePanel.tsx` |
+| — | **Settings → Quick Trades**: per-chain amounts grouped by quote currency, each labelled with its unit and a `≈$` value, a USD batch setter, and a fee-share warning | `components/settings/QuickTradesSection.tsx`, `lib/quick-trade-units.ts` |
+| — | **All-chain balance total and a working chain switcher** in the account menu | `components/settings/SettingsPage.tsx`, `stores/chain-context.ts` |
+| — | **Deposit dialog** driven by a live cross-chain quote (Stableflow referrer over an intent rail), with `Estimated time` and `Fee` | `components/deposit/*` |
+
+Two earlier candidates were **dropped after re-testing against the live app**, so they are no longer
+in the list: labelling the eight Token-Info badges (Sigma's own row is deliberately unlabelled and
+the captured markup is the reference we are matching), and a `Clean layout mode` toggle. The token
+info row is Sigma's own markup unchanged; the density toggle above is what remains of that idea.
 
 ## Data behaviour
 
