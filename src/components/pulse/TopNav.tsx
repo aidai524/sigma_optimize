@@ -1,4 +1,6 @@
+import { useState } from "react";
 import { ChevronDown, Flame, LayoutGrid, Search, Star, TrendingUp } from "lucide-react";
+import { DepositDialog } from "@/components/deposit/DepositDialog";
 import { cn } from "@/lib/utils";
 
 const NAV = ["Discover", "Pulse", "Traders", "Trading", "Portfolio", "Rewards", "Orders", "Settings"];
@@ -15,6 +17,7 @@ function SigmaMark({ className }: { className?: string }) {
 }
 
 export function TopNav({ active = "Pulse", onNavigate }: { active?: string; onNavigate?: (item: string) => void }) {
+  const [depositOpen, setDepositOpen] = useState(false);
   return (
     <header className="border-b border-border bg-canvas">
       {/* main bar */}
@@ -53,7 +56,11 @@ export function TopNav({ active = "Pulse", onNavigate }: { active?: string; onNa
           <button className="grid size-8 place-items-center rounded-lg bg-secondary text-muted-foreground transition-colors hover:text-foreground">
             <Star className="size-4" />
           </button>
-          <button className="h-8 rounded-lg border-[0.5px] border-brand-500 bg-brand-500/[0.12] px-3 text-sm font-medium text-brand-500 transition-colors hover:bg-brand-500/20">
+          <button
+            type="button"
+            onClick={() => setDepositOpen(true)}
+            className="h-8 cursor-pointer rounded-lg border-[0.5px] border-brand-500 bg-brand-500/[0.12] px-3 text-sm font-medium text-brand-500 transition-colors hover:bg-brand-500/20"
+          >
             Deposit
           </button>
           <button className="flex h-8 items-center gap-2 rounded-lg bg-secondary px-2.5 text-sm">
@@ -87,6 +94,7 @@ export function TopNav({ active = "Pulse", onNavigate }: { active?: string; onNa
         <span className="h-4 w-px bg-border" />
         <span className="text-[13px]">Add tokens to your watchlist to see them here</span>
       </div>
+      <DepositDialog open={depositOpen} onOpenChange={setDepositOpen} />
     </header>
   );
 }
