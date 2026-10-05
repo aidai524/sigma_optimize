@@ -288,7 +288,9 @@ function GroupHeading({ group, onApply }: { group: QuoteGroup; onApply: (amount:
           }}
           className="h-8 rounded-md bg-secondary/95 px-3 text-sm font-medium whitespace-nowrap text-secondary-foreground transition-colors hover:bg-secondary/60 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Apply to {group.chains.length}
+          {/* No count on purpose: the global button carries "all 8 chains", so the
+              scope of each is told apart by the number being there or not. */}
+          {group.chains.length > 1 ? "Apply to All" : "Apply"}
         </button>
       </div>
     </div>
