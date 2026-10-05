@@ -1,16 +1,8 @@
 import { useState } from "react";
 import { Plus, Trash2, Zap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { CHAINS, type ChainId } from "@/lib/chain-registry";
+import { CHAINS, CHAIN_ORDER, type ChainId } from "@/lib/chain-registry";
 import { ChainMark } from "@/components/settings/chainMarks";
 import { useQuickTrades, type QuickTradeSetting } from "@/components/settings/quickTrades";
 import {
@@ -298,58 +290,60 @@ function GroupHeading({ group, onApply }: { group: QuoteGroup; onApply: (amount:
 }
 
 /**
- * One input that can set every chain at once.
+ * One input that can set every chain at once, by dollar amount.
  *
- * In USD the value is converted per unit, so it is safe across groups and the
- * preview shows each group's resulting amount and what it really costs. With the
- * USD switch off the number is a **token** amount, and copying one number into a
- * different unit silently changes its value (`0.002 ETH` ≈ $5.4 vs `0.002 BNB` ≈
- * $1.5) — so that path asks for confirmation and shows both sides.
+ * Only dollars are offered. A dollar amount converts per unit, so one input is safe
+ * across groups — and because the preview lists what each unit actually receives, it
+ * also answers "what token does this chain use?". Copying one *token* number across
+ * units is what silently changes its value (`0.002 ETH` ≈ $5.4 against `0.002 BNB`
+ * ≈ $1.5), so that path does not exist here; same-unit batches are what the group
+ * headers are for.
+ *
+ * Collapsed by default: the amounts are the thing to read on this page, and an open
+ * form pushes them below the fold.
  */
-function BatchSetter({ onApplyUsd, onApplyToken }: {
+function BatchSetter({ onApplyUsd, chainCount }: {
   onApplyUsd: (usd: number) => void;
-  onApplyToken: (amount: number) => void;
+  chainCount: number;
 }) {
-  const [usdMode, setUsdMode] = useState(true);
+  const [open, setOpen] = useState(false);
   const [raw, setRaw] = useState("10");
-  const [confirmOpen, setConfirmOpen] = useState(false);
   const value = Number(raw);
   const valid = Number.isFinite(value) && value > 0;
 
   const preview = QUOTE_GROUPS.map((group) => {
     const chain = group.chains[0];
-    const amount = usdMode
-      ? usdToAmount(value, group.symbol, CHAINS[chain].priceUsd)
-      : value;
+    const amount = usdToAmount(value, group.symbol, CHAINS[chain].priceUsd);
     return { group, amount, usd: amountToUsd(chain, amount) };
   });
+
+  if (!open) {
+    return (
+      <div className="rounded-md border border-border bg-background p-4">
+        <button
+          onClick={() => setOpen(true)}
+          className="h-8 cursor-pointer rounded-lg bg-secondary/95 px-4 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/60"
+        >
+          Set every chain by USD
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="rounded-md border border-border bg-background p-4">
       <div className="flex flex-wrap items-end gap-3">
         <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-muted-foreground">Set every chain by</span>
-          <div className="flex h-8 items-center gap-2">
-            <Switch
-              aria-label="Enter an amount in USD"
-              checked={usdMode}
-              onCheckedChange={(checked) => setUsdMode(checked === true)}
-            />
-            <span className="text-sm font-medium">{usdMode ? "USD" : "Token amount"}</span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <span className="text-xs text-muted-foreground">
-            {usdMode ? "Dollars per chain" : "Amount per chain (each chain's own unit)"}
-          </span>
-          <div className="flex h-8 w-32 items-center rounded-sm border border-input px-2">
+          <span className="text-xs text-muted-foreground">Set every chain by USD</span>
+          <div className="flex h-8 w-32 items-center gap-1 rounded-sm border border-input px-2">
+            <span className="text-sm text-muted-foreground">$</span>
             <input
               type="number"
               min={0}
               step={0.01}
               inputMode="decimal"
-              aria-label="Batch amount"
-              placeholder={usdMode ? "$" : "0.00"}
+              aria-label="Dollar amount per chain"
+              placeholder="0.00"
               value={raw}
               onChange={(e) => setRaw(e.target.value)}
               className={numberInput}
@@ -358,14 +352,22 @@ function BatchSetter({ onApplyUsd, onApplyToken }: {
         </div>
         <button
           disabled={!valid}
-          onClick={() => (usdMode ? onApplyUsd(value) : setConfirmOpen(true))}
+          onClick={() => {
+            if (valid) onApplyUsd(value);
+          }}
           className="h-8 rounded-lg bg-secondary/95 px-4 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/60 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          Apply to all {QUOTE_GROUPS.reduce((n, g) => n + g.chains.length, 0)} chains
+          Apply to all {chainCount} chains
+        </button>
+        <button
+          onClick={() => setOpen(false)}
+          className="h-8 rounded-lg border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
+        >
+          Cancel
         </button>
       </div>
 
-      {/* What each unit would actually receive — the transparency the switch buys. */}
+      {/* What each unit would actually receive — the same conversion the apply performs. */}
       <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t border-border pt-3 text-xs">
         {preview.map(({ group, amount, usd }) => (
           <span key={group.symbol} className="tabular-nums">
@@ -376,44 +378,6 @@ function BatchSetter({ onApplyUsd, onApplyToken }: {
         ))}
       </div>
 
-      <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <DialogContent className="sm:max-w-[420px]">
-          <DialogHeader>
-            <DialogTitle>Copy the same number into different units?</DialogTitle>
-            <DialogDescription>
-              This writes <span className="text-foreground">{raw}</span> of each chain&apos;s own
-              token, so the same number is a different amount of money per unit.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex flex-col gap-1.5 py-2 text-sm tabular-nums">
-            {preview.map(({ group, amount, usd }) => (
-              <div key={group.symbol} className="flex items-center justify-between gap-4">
-                <span className="text-muted-foreground">{group.label}</span>
-                <span>
-                  {amount} {group.symbol} <span className="text-muted-foreground">≈ {formatUsd(usd)}</span>
-                </span>
-              </div>
-            ))}
-          </div>
-          <DialogFooter>
-            <button
-              onClick={() => setConfirmOpen(false)}
-              className="h-8 rounded-lg border border-border px-4 text-sm font-medium text-muted-foreground transition-colors hover:bg-secondary/60 hover:text-foreground"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={() => {
-                onApplyToken(value);
-                setConfirmOpen(false);
-              }}
-              className="h-8 rounded-lg bg-secondary/95 px-4 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/60"
-            >
-              Apply anyway
-            </button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
@@ -451,15 +415,11 @@ export function QuickTradesSection() {
         </div>
 
         <BatchSetter
+          chainCount={CHAIN_ORDER.length}
           onApplyUsd={(usd) => {
             for (const group of QUOTE_GROUPS) {
               const price = CHAINS[group.chains[0]].priceUsd;
               const amount = usdToAmount(usd, group.symbol, price);
-              for (const chain of group.chains) setPrimaryBuy(chain, amount);
-            }
-          }}
-          onApplyToken={(amount) => {
-            for (const group of QUOTE_GROUPS) {
               for (const chain of group.chains) setPrimaryBuy(chain, amount);
             }
           }}
