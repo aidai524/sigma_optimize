@@ -31,6 +31,14 @@ export type ChainMeta = {
   logo: string;
   /** USD price of one unit of `symbol`, matching the status bar. */
   priceUsd: number;
+  /**
+   * Rough cost of one transaction on this chain in USD, used to warn when a preset
+   * amount is small enough that fees would dominate it. Only filled in where there is
+   * a real observation behind the number — ETH mainnet was measured at ~25% of a $5
+   * order during the walkthrough, and Base fees were observed in cents. Chains with no
+   * data are left undefined so the warning stays silent instead of guessing.
+   */
+  estTxCostUsd?: number;
 };
 
 export const CHAINS: Record<ChainId, ChainMeta> = {
@@ -43,6 +51,7 @@ export const CHAINS: Record<ChainId, ChainMeta> = {
     glyph: "Ξ",
     logo: "/sigma.win/cdn/chains/eth.svg",
     priceUsd: 2701.91,
+    estTxCostUsd: 1.25,
   },
   bsc: {
     id: "bsc",
@@ -73,6 +82,7 @@ export const CHAINS: Record<ChainId, ChainMeta> = {
     glyph: "●",
     logo: "/sigma.win/cdn/chains/base.svg",
     priceUsd: 2701.91,
+    estTxCostUsd: 0.02,
   },
   sol: {
     id: "sol",
