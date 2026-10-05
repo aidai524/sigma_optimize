@@ -12,9 +12,13 @@ type Props = {
 };
 
 /**
- * Real OHLCV sparkline. Data is fetched lazily — only once the row is visible —
- * and a skeleton is shown while it loads. This is the concrete fix for the
- * "Trend column renders as an empty grey box for seconds" issue.
+ * Real OHLCV sparkline. Data is fetched lazily — only once the row is actually
+ * visible — and a skeleton is shown while it loads. This is the concrete fix for
+ * the "Trend column renders as an empty grey box for seconds" issue.
+ *
+ * Pacing is the request scheduler's job (see lib/gt.ts): it keeps the queue under
+ * the free tier's rate, so this component only has to retry the occasional
+ * throttle and then give up visibly rather than sit on a skeleton forever.
  */
 export function Sparkline({ network, poolAddress, window, width = 120, height = 36 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
@@ -32,7 +36,9 @@ export function Sparkline({ network, poolAddress, window, width = 120, height = 
           io.disconnect();
         }
       },
-      { rootMargin: "120px" },
+      // No margin: queueing a request per off-screen row is what pushed the API
+      // over its burst limit. Rows load as they scroll in.
+      { rootMargin: "0px" },
     );
     io.observe(el);
     return () => io.disconnect();
@@ -52,8 +58,10 @@ export function Sparkline({ network, poolAddress, window, width = 120, height = 
         })
         .catch(() => {
           if (!alive) return;
-          // The free API rate-limits bursts; back off patiently.
-          const delays = [5_000, 15_000, 30_000, 60_000];
+          // Retry a couple of times — the scheduler is already pacing requests, so
+          // a failure here means the API pushed back and the queue is cooling
+          // down. After that show "n/a" instead of an endless skeleton.
+          const delays = [3_000, 8_000, 20_000];
           if (n < delays.length) {
             timer = globalThis.setTimeout(() => attempt(n + 1), delays[n]);
           } else {
