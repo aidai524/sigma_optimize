@@ -112,6 +112,10 @@ export function receiveChain(id: string) {
   return RECEIVE_CHAINS.find((chain) => chain.id === id) ?? RECEIVE_CHAINS[0]
 }
 
+export function isDestinationChain(id: string): id is DestinationChainId {
+  return RECEIVE_CHAINS.some((chain) => chain.id === id)
+}
+
 export function sortBlockchains(blockchains: string[]): string[] {
   const rank = new Map<string, number>(DEPOSIT_CHAINS.map((code, index) => [code, index]))
   return [...blockchains].sort((a, b) => {

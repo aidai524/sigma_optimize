@@ -1,5 +1,5 @@
-import { isDepositChain } from "@/lib/chains"
-import { API_BASE } from "@/lib/env"
+import { RECEIVE_CHAINS, isDepositChain } from "@/lib/chains"
+import { NEARINTENTS_API_KEY, ONECLICK_BASE } from "@/lib/env"
 
 export type IntentsToken = {
   assetId: string
@@ -82,9 +82,24 @@ function mapToken(raw: unknown): IntentsToken | null {
   }
 }
 
+const DEPOSIT_SYMBOLS = new Set(["USDT", "USDT0", "USDC"])
+
 export function isNativeToken(token: Pick<IntentsToken, "contractAddress">): boolean {
   const addr = String(token.contractAddress || "").trim().toLowerCase()
   return !addr || addr === "native" || addr === ZERO_ADDRESS
+}
+
+function isCurrentGasToken(token: Pick<IntentsToken, "symbol" | "contractAddress">): boolean {
+  return isNativeToken(token) && !token.symbol.toUpperCase().includes("DEPRECATED")
+}
+
+export function isDepositSourceToken(token: Pick<IntentsToken, "symbol" | "contractAddress">): boolean {
+  return DEPOSIT_SYMBOLS.has(token.symbol.trim().toUpperCase()) || isCurrentGasToken(token)
+}
+
+export function isReceiveGasToken(token: Pick<IntentsToken, "blockchain" | "symbol" | "contractAddress">): boolean {
+  const chain = RECEIVE_CHAINS.find((item) => item.id === token.blockchain)
+  return Boolean(chain && chain.symbol === token.symbol && isCurrentGasToken(token))
 }
 
 export function assetKey(token: Pick<IntentsToken, "blockchain" | "symbol" | "contractAddress">): string {
@@ -134,7 +149,12 @@ function fetchIntentsTokens(force: boolean): Promise<IntentsToken[]> {
     error = null
     publish()
   }
-  inflight = fetch(`${API_BASE}/v1/nearintents/tokens`)
+  inflight = fetch(`${ONECLICK_BASE}/v0/tokens`, {
+    headers: {
+      Accept: "application/json",
+      "X-API-Key": NEARINTENTS_API_KEY,
+    },
+  })
     .then(async (res) => {
       const payload: unknown = await res.json()
       if (!res.ok) throw new Error("Could not load tokens")

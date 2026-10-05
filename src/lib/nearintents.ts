@@ -1,8 +1,16 @@
-import { API_BASE } from "@/lib/env"
+import { NEARINTENTS_API_KEY, ONECLICK_BASE } from "@/lib/env"
+
+export type AppFee = {
+  recipient: string
+  fee: number
+}
 
 export type NearintentsQuote = {
   correlationId?: string
   message?: string
+  quoteRequest?: {
+    appFees?: AppFee[]
+  }
   quote?: {
     depositAddress?: string
     depositMemo?: string
@@ -11,6 +19,7 @@ export type NearintentsQuote = {
     amountOut?: string
     minAmountIn?: string
     deadline?: string
+    timeEstimate?: number
   }
 }
 
@@ -97,12 +106,13 @@ function unwrap(payload: unknown): unknown {
 }
 
 async function request(path: string, init?: RequestInit): Promise<unknown> {
-  const res = await fetch(`${API_BASE}${path}`, {
+  const res = await fetch(`${ONECLICK_BASE}${path}`, {
     ...init,
     headers: {
       Accept: "application/json",
       ...(init?.body ? { "Content-Type": "application/json" } : {}),
       ...init?.headers,
+      "X-API-Key": NEARINTENTS_API_KEY,
     },
   })
   const text = await res.text()
@@ -119,7 +129,7 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
 }
 
 export async function nearintentsQuote(input: QuoteRequest): Promise<NearintentsQuote> {
-  const data = await request("/v1/nearintents/quote", {
+  const data = await request("/v0/quote", {
     method: "POST",
     body: JSON.stringify({
       dry: false,
@@ -135,6 +145,7 @@ export async function nearintentsQuote(input: QuoteRequest): Promise<Nearintents
       slippageTolerance: 100,
       deadline: new Date(Date.now() + 30 * 60_000).toISOString(),
       quoteWaitingTimeMs: 0,
+      referrer: "stableflow",
     }),
   })
   const quote = (data ?? {}) as NearintentsQuote
@@ -147,6 +158,6 @@ export async function nearintentsQuote(input: QuoteRequest): Promise<Nearintents
 export async function nearintentsStatus(depositAddress: string, depositMemo?: string): Promise<NearintentsStatus> {
   const search = new URLSearchParams({ depositAddress })
   if (depositMemo?.trim()) search.set("depositMemo", depositMemo.trim())
-  const data = await request(`/v1/nearintents/status?${search.toString()}`)
+  const data = await request(`/v0/status?${search.toString()}`)
   return (data ?? {}) as NearintentsStatus
 }

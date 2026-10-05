@@ -1,4 +1,5 @@
-export const API_BASE = (import.meta.env.VITE_API_BASE_URL || "https://api.stableflow.ai").replace(/\/$/, "")
+export const ONECLICK_BASE = "https://1click.chaindefuser.com"
+export const NEARINTENTS_API_KEY = import.meta.env.VITE_NEARINTENTS_API_KEY || "";
 
 export const RPC_URLS = {
   eth: import.meta.env.VITE_ETH_RPC_URL || "https://ethereum.publicnode.com",

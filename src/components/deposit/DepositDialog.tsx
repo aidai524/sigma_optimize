@@ -8,22 +8,15 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
 import { TokenSelectDialog } from "@/components/deposit/TokenSelectDialog"
 import { useDepositQuote } from "@/components/deposit/use-deposit-quote"
 import { isAddressForChain } from "@/lib/address"
 import {
-  RECEIVE_CHAINS,
   chainKind,
-  chainLogoUrl,
   chainName,
+  isDestinationChain,
   receiveChain,
   tokenLogoUrl,
   type RefundKind,
@@ -32,9 +25,12 @@ import {
   assetKey,
   destinationNative,
   getIntentsTokensSnapshot,
+  isDepositSourceToken,
+  isReceiveGasToken,
   resolveSourceToken,
   subscribeIntentsTokens,
 } from "@/lib/intents-tokens"
+import type { AppFee } from "@/lib/nearintents"
 import { readNativeBalance } from "@/lib/native-balance"
 import { formatBalance, formatUsd, oneUsdMinor } from "@/lib/quote-error"
 import { useDepositBalance } from "@/stores/deposit-balance"
@@ -66,6 +62,17 @@ async function copyText(value: string) {
   toast.success("Address copied")
 }
 
+function formatTimeEstimate(seconds: number | undefined): string {
+  if (seconds == null || !Number.isFinite(seconds) || seconds <= 0) return "—"
+  if (seconds < 60) return `~${Math.round(seconds)} sec`
+  return `~${Math.max(1, Math.round(seconds / 60))} min`
+}
+
+function formatAppFeePercent(fees: AppFee[] | undefined): string {
+  const bps = (fees ?? []).reduce((sum, fee) => (Number.isFinite(fee.fee) ? sum + fee.fee : sum), 0)
+  return `${Number((bps / 100).toFixed(4))}%`
+}
+
 export function DepositDialog(props: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { open, onOpenChange } = props
   const prefs = useDepositPrefs()
@@ -75,9 +82,12 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
   const tokensLoading = tokenSnapshot.loading
   const tokensError = tokenSnapshot.error
   const [pickerOpen, setPickerOpen] = useState(false)
+  const [receivePickerOpen, setReceivePickerOpen] = useState(false)
 
+  const depositTokens = tokens.filter(isDepositSourceToken)
+  const receiveTokens = tokens.filter(isReceiveGasToken)
   const destination = receiveChain(prefs.destinationChain)
-  const source = resolveSourceToken(tokens, prefs.sourceAssetKey)
+  const source = resolveSourceToken(depositTokens, prefs.sourceAssetKey)
   const native = destinationNative(tokens, destination.id, destination.symbol)
   const account = prefs.accountByChain[destination.id] ?? ""
   const refundKind = source ? chainKind(source.blockchain) : null
@@ -249,50 +259,42 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
                   className="cursor-pointer disabled:cursor-not-allowed flex h-10 items-center gap-2 rounded-lg border border-border bg-transparent px-3 text-sm text-foreground disabled:opacity-50"
                 >
                   {source ? (
-                    <Mark src={tokenLogoUrl(source.symbol)} label={source.symbol} className="size-5 rounded-full object-cover" />
+                    <Mark src={tokenLogoUrl(source.symbol)} label={source.symbol} className="size-5 shrink-0 rounded-full object-cover" />
                   ) : (
-                    <span className="size-5 rounded-full bg-secondary" />
+                    <span className="size-5 shrink-0 rounded-full bg-secondary" />
                   )}
-                  <span className="truncate">{source?.symbol ?? "Select"}</span>
-                  <ChevronDown className="ml-auto size-4 text-muted-foreground" />
+                  <span className="truncate">
+                    {source ? `${source.symbol} on ${chainName(source.blockchain)}` : "Select"}
+                  </span>
+                  <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
                 </button>
               </div>
               <div className="flex min-w-0 flex-col gap-1.5">
                 <span className="text-sm text-muted-foreground">Receive on</span>
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    disabled={formLocked}
-                    className="cursor-pointer disabled:cursor-not-allowed flex h-10 items-center gap-2 rounded-lg border border-border bg-transparent px-3 text-sm text-foreground outline-none disabled:opacity-50"
-                  >
-                    <Mark src={chainLogoUrl(destination.id)} label={destination.label} className="size-5 rounded-full object-cover" />
-                    <span className="truncate">{destination.label}</span>
-                    <ChevronDown className="ml-auto size-4 text-muted-foreground" />
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="border-border bg-popover">
-                    {RECEIVE_CHAINS.map((chain) => (
-                      <DropdownMenuItem
-                        key={chain.id}
-                        onClick={() => prefs.setDestinationChain(chain.id)}
-                        className={cn("text-sm", chain.id === destination.id && "text-brand")}
-                      >
-                        <Mark src={chainLogoUrl(chain.id)} label={chain.label} className="size-4 rounded-full object-cover" />
-                        {chain.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                <button
+                  type="button"
+                  disabled={formLocked}
+                  onClick={() => setReceivePickerOpen(true)}
+                  className="cursor-pointer disabled:cursor-not-allowed flex h-10 items-center gap-2 rounded-lg border border-border bg-transparent px-3 text-sm text-foreground disabled:opacity-50"
+                >
+                  <Mark src={tokenLogoUrl(destination.symbol)} label={destination.symbol} className="size-5 shrink-0 rounded-full object-cover" />
+                  <span className="truncate">{destination.symbol} on {destination.label}</span>
+                  <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
+                </button>
               </div>
             </div>
 
             {source ? (
-              <p className="text-sm text-muted-foreground">
-                Deposit {source.symbol} on {chainName(source.blockchain)}. It arrives as {destination.symbol} on {destination.label}.
+              <p className="rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground">
+                Deposit {source.symbol} on {chainName(source.blockchain)}
+                <span className="mx-1.5 text-muted-foreground">→</span>
+                Receive {destination.symbol} on {destination.label}
               </p>
             ) : null}
 
             {quoteState.minDeposit ? (
-              <p className="text-xs text-amber-300">
-                Minimum deposit is {quoteState.minDeposit}. A smaller amount will fail.
+              <p className="text-sm text-yellow-400">
+                Quoted for {quoteState.minDeposit} — you can send any amount.
               </p>
             ) : null}
 
@@ -304,7 +306,7 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
                   ) : depositAddress ? (
                     <QRCodeSVG value={depositAddress} size={132} level="M" />
                   ) : (
-                    <span className="px-3 text-center text-xs text-neutral-400">Quote failed</span>
+                    <span className="px-3 text-center text-xs leading-snug text-neutral-400">Enter an address to get a deposit address</span>
                   )}
                 </div>
                 <div className="flex min-w-0 flex-1 flex-col justify-center gap-2">
@@ -368,6 +370,27 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
               </div>
             )}
 
+            {showForm ? (
+              <div className="flex flex-col gap-2 rounded-xl border border-border p-3 text-sm">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Estimated time</span>
+                  {quoteState.quoting || tokensLoading ? (
+                    <Skeleton className="h-4 w-16" />
+                  ) : (
+                    <span className="text-foreground">{formatTimeEstimate(quoteState.quote?.quote?.timeEstimate)}</span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="text-muted-foreground">Fee</span>
+                  {quoteState.quoting || tokensLoading ? (
+                    <Skeleton className="h-4 w-12" />
+                  ) : (
+                    <span className="text-foreground">{formatAppFeePercent(quoteState.quote?.quoteRequest?.appFees)}</span>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             {showError ? (
               <p className="text-center text-sm text-sell-foreground">{quoteState.error}</p>
             ) : null}
@@ -396,10 +419,20 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
       <TokenSelectDialog
         open={pickerOpen}
         onClose={() => setPickerOpen(false)}
-        tokens={tokens}
+        tokens={depositTokens}
         loading={tokensLoading}
         selectedAssetId={source?.assetId ?? null}
         onSelect={(token) => prefs.setSourceToken({ blockchain: token.blockchain, assetKey: assetKey(token) })}
+      />
+      <TokenSelectDialog
+        open={receivePickerOpen}
+        onClose={() => setReceivePickerOpen(false)}
+        tokens={receiveTokens}
+        loading={tokensLoading}
+        selectedAssetId={native?.assetId ?? null}
+        onSelect={(token) => {
+          if (isDestinationChain(token.blockchain)) prefs.setDestinationChain(token.blockchain)
+        }}
       />
     </>
   )
