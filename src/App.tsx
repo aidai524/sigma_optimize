@@ -13,11 +13,16 @@ import type { NetworkId, WindowKey } from "@/lib/gt";
 import { cn } from "@/lib/utils";
 
 type Density = "comfortable" | "compact";
-type PageId = "Pulse" | "Settings";
+type PageId = "Discover" | "Settings";
 
 const SORTS = ["Trending", "Surge", "Recent"] as const;
 
-function PulsePage() {
+/**
+ * The trending table. This is Sigma's **Discover** page — the captured header marks
+ * `Discover` as the active nav item. Pulse is a different page and is not built yet,
+ * so nothing here is labelled Pulse.
+ */
+function DiscoverPage() {
   const [network, setNetwork] = useState<NetworkId>("solana");
   const [windowKey, setWindowKey] = useState<WindowKey>("h1");
   const [density, setDensity] = useState<Density>("comfortable");
@@ -93,8 +98,10 @@ function StatusBar() {
       <div className="flex items-center gap-3">
         <Settings className="size-4" />
         <Rocket className="size-4" />
-        <span className="text-sm font-medium text-foreground">Pulse</span>
-        <span className="flex items-center gap-1.5 text-sm hover:text-foreground">
+        <span className="flex items-center gap-1.5 text-sm text-muted-foreground">
+          Pulse
+        </span>
+        <span className="flex items-center gap-1.5 text-sm font-medium text-foreground">
           <LayoutList className="size-4" />
           Discover
         </span>
@@ -127,14 +134,23 @@ function StatusBar() {
 }
 
 export default function App() {
-  const [page, setPage] = useState<PageId>("Pulse");
+  const [page, setPage] = useState<PageId>("Discover");
 
   return (
     <PresetsProvider>
       <QuickTradesProvider>
         <div className="min-h-screen bg-canvas text-foreground">
-          <TopNav active={page} onNavigate={(next) => setPage(next === "Settings" ? "Settings" : "Pulse")} />
-          {page === "Settings" ? <SettingsPage /> : <PulsePage />}
+          <TopNav
+            active={page}
+            onNavigate={(next) => {
+              // Only the two built pages navigate. Pulse / Traders / Trading / … are
+              // not implemented in this build, so clicking them does nothing rather
+              // than silently showing a different page.
+              if (next === "Settings") setPage("Settings");
+              else if (next === "Discover") setPage("Discover");
+            }}
+          />
+          {page === "Settings" ? <SettingsPage /> : <DiscoverPage />}
           <StatusBar />
           <Toaster position="bottom-center" />
         </div>

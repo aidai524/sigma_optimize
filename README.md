@@ -1,6 +1,7 @@
-# Sigma Terminal — Pulse (trial build)
+# Sigma Terminal — Discover (trial build)
 
-React + TypeScript + Tailwind + shadcn implementation of the improvements identified
+React + TypeScript + Tailwind + shadcn implementation of Sigma's **Discover** page (the trending
+list) with the improvements identified
 in the competitor comparison. Built for the Sigma frontend trial task.
 
 ## Stack

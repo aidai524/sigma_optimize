@@ -145,7 +145,7 @@ interface MenuPos {
   triggerWidth: number;
 }
 
-export function TopNav({ active = "Pulse", onNavigate }: Props) {
+export function TopNav({ active = "Discover", onNavigate }: Props) {
   const [menu, setMenu] = useState<MenuPos | null>(null);
   const [submenu, setSubmenu] = useState<{ top: number; right: number } | null>(null);
   const [chainList, setChainList] = useState<{ top: number; left: number } | null>(null);
