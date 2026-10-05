@@ -264,7 +264,14 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
                     <span className="size-5 shrink-0 rounded-full bg-secondary" />
                   )}
                   <span className="truncate">
-                    {source ? `${source.symbol} on ${chainName(source.blockchain)}` : "Select"}
+                    {source ? (
+                      <>
+                        {source.symbol} <span className="text-muted-foreground">on</span>{" "}
+                        {chainName(source.blockchain)}
+                      </>
+                    ) : (
+                      "Select"
+                    )}
                   </span>
                   <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
                 </button>
@@ -278,19 +285,14 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
                   className="cursor-pointer disabled:cursor-not-allowed flex h-10 items-center gap-2 rounded-lg border border-border bg-transparent px-3 text-sm text-foreground disabled:opacity-50"
                 >
                   <Mark src={tokenLogoUrl(destination.symbol)} label={destination.symbol} className="size-5 shrink-0 rounded-full object-cover" />
-                  <span className="truncate">{destination.symbol} on {destination.label}</span>
+                  <span className="truncate">
+                    {destination.symbol} <span className="text-muted-foreground">on</span>{" "}
+                    {destination.label}
+                  </span>
                   <ChevronDown className="ml-auto size-4 shrink-0 text-muted-foreground" />
                 </button>
               </div>
             </div>
-
-            {source ? (
-              <p className="rounded-lg bg-secondary px-3 py-2.5 text-sm text-foreground">
-                Deposit {source.symbol} on {chainName(source.blockchain)}
-                <span className="mx-1.5 text-muted-foreground">→</span>
-                Receive {destination.symbol} on {destination.label}
-              </p>
-            ) : null}
 
             {quoteState.minDeposit ? (
               <p className="text-sm text-yellow-400">
