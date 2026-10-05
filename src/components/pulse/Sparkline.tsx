@@ -1,5 +1,7 @@
-import { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { fetchSparkline, type WindowKey } from "@/lib/gt";
+import { REAL_SPARKLINE_ROWS, SIMULATE_SPARKLINES } from "@/lib/env";
+import { syntheticCandles } from "@/lib/synthetic-ohlcv";
 import type { OhlcvCandle } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -7,26 +9,50 @@ type Props = {
   network: string;
   poolAddress: string;
   window: WindowKey;
+  /** Row index — the cut-off between real and synthetic series is by row. */
+  index: number;
+  /** The row's real window change, so a synthetic line agrees with the table. */
+  change: number;
   width?: number;
   height?: number;
 };
 
 /**
- * Real OHLCV sparkline. Data is fetched lazily — only once the row is actually
- * visible — and a skeleton is shown while it loads. This is the concrete fix for
- * the "Trend column renders as an empty grey box for seconds" issue.
+ * Trend cell.
  *
- * Pacing is the request scheduler's job (see lib/gt.ts): it keeps the queue under
- * the free tier's rate, so this component only has to retry the occasional
- * throttle and then give up visibly rather than sit on a skeleton forever.
+ * The free GeckoTerminal tier refuses a burst of one OHLCV request per row, so by
+ * default the first `REAL_SPARKLINE_ROWS` rows fetch real candles and the rest draw
+ * a deterministic synthetic series (see `lib/synthetic-ohlcv.ts`). With
+ * `VITE_SIMULATE_SPARKLINES=false` every row uses the API.
+ *
+ * Real rows fetch lazily — only once actually visible — and are paced by the
+ * request scheduler in `lib/gt.ts`, which keeps the queue under the API's rate and
+ * backs off when pushed. A real row that keeps failing shows "n/a" rather than a
+ * skeleton forever.
  */
-export function Sparkline({ network, poolAddress, window, width = 120, height = 36 }: Props) {
+export function Sparkline({
+  network,
+  poolAddress,
+  window,
+  index,
+  change,
+  width = 120,
+  height = 36,
+}: Props) {
+  const simulate = SIMULATE_SPARKLINES && index >= REAL_SPARKLINE_ROWS;
+
   const ref = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [candles, setCandles] = useState<OhlcvCandle[] | null>(null);
   const [failed, setFailed] = useState(false);
 
+  const synthetic = useMemo(
+    () => (simulate ? syntheticCandles(poolAddress, change, 60) : null),
+    [simulate, poolAddress, change],
+  );
+
   useEffect(() => {
+    if (simulate) return;
     const el = ref.current;
     if (!el || visible) return;
     const io = new IntersectionObserver(
@@ -42,10 +68,10 @@ export function Sparkline({ network, poolAddress, window, width = 120, height = 
     );
     io.observe(el);
     return () => io.disconnect();
-  }, [visible]);
+  }, [visible, simulate]);
 
   useEffect(() => {
-    if (!visible) return;
+    if (!visible || simulate) return;
     let alive = true;
     let timer: number | undefined;
     setCandles(null);
@@ -75,18 +101,19 @@ export function Sparkline({ network, poolAddress, window, width = 120, height = 
       alive = false;
       if (timer) globalThis.clearTimeout(timer);
     };
-  }, [visible, network, poolAddress, window]);
+  }, [visible, simulate, network, poolAddress, window]);
 
-  const closes = candles?.map((c) => c.c) ?? [];
+  const series = synthetic ?? candles;
+  const closes = series?.map((c) => c.c) ?? [];
   const up = closes.length > 1 ? closes[closes.length - 1] >= closes[0] : true;
   const stroke = up ? "#33ffb8" : "#ff3d7b";
   const gid = useId();
 
   return (
     <div ref={ref} className="flex items-center justify-center" style={{ width, height }}>
-      {!candles && !failed && <Skeleton className="h-full w-full rounded-sm bg-muted/60 opacity-70" />}
+      {!series && !failed && <Skeleton className="h-full w-full rounded-sm bg-muted/60 opacity-70" />}
       {failed && <span className="text-[10px] text-muted-foreground">n/a</span>}
-      {candles && closes.length > 1 && (
+      {series && closes.length > 1 && (
         <svg
           width={width}
           height={height}
@@ -111,7 +138,7 @@ export function Sparkline({ network, poolAddress, window, width = 120, height = 
           />
         </svg>
       )}
-      {candles && closes.length <= 1 && (
+      {series && closes.length <= 1 && (
         <span className="text-[10px] text-muted-foreground">flat</span>
       )}
     </div>

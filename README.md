@@ -14,7 +14,7 @@ in the competitor comparison. Built for the Sigma frontend trial task.
 
 | ID | Improvement | Where |
 | --- | --- | --- |
-| — | **Sparklines render with a skeleton and load lazily per row** (IntersectionObserver) with retry — engineering polish, not a claimed competitor gap | `components/pulse/Sparkline.tsx`, `PulseTable.tsx` |
+| — | **Trend column renders for every row**: the first two rows draw real OHLCV, the rest a deterministic synthetic series, because the free API will not serve one request per row | `components/pulse/Sparkline.tsx`, `lib/synthetic-ohlcv.ts`, `lib/gt.ts` |
 | A2 | **Grouped + labelled token metrics** (Liquidity / Valuation / Activity / Pool) replacing eight unlabelled micro-badges; Liq/MCap ratio highlighted when low | `components/pulse/TokenInfoCell.tsx` |
 | A3 | **Row quick-buy shows the amount** (active preset) instead of being icon-only, with a compact confirm | `components/pulse/QuickBuyButton.tsx` |
 | A4 | **Clean layout mode + comfortable/compact density**, persisted to localStorage | `Toolbar.tsx` |
@@ -23,12 +23,25 @@ in the competitor comparison. Built for the Sigma frontend trial task.
 
 ## Data behaviour
 
-- Trending pools come from `GET /networks/{net}/trending_pools`.
-- Sparklines come from `GET /networks/{net}/pools/{pool}/ohlcv/...` (real OHLCV).
-- Results are cached in memory (45s for lists, 5 min for sparklines) and all requests
-  go through a concurrency queue because the free tier is rate limited.
-- On rate limit / network error the UI keeps the previous data and retries with
-  exponential backoff; first load keeps a skeleton for at least 600ms so the table
+- Trending pools come from `GET /networks/{net}/trending_pools`. **All table data is real.**
+- **Trend column**: the first `REAL_SPARKLINE_ROWS` (default **2**) rows fetch real OHLCV from
+  `GET /networks/{net}/pools/{pool}/ohlcv/...`. Every row after that draws a **synthetic**
+  series from `lib/synthetic-ohlcv.ts` — deterministic per pool, and with its net move forced
+  to match the row's real window change so the line cannot contradict the Gain column.
+  This is presentation data, not market data.
+  - Why: the free GeckoTerminal tier refuses a burst of one OHLCV request per row. A 20-row
+    page meant ~20 near-simultaneous requests; the first couple succeeded and the rest were
+    refused, which left most of the trend column empty.
+  - The refusal never arrives as a `429` Response — the error reply carries no CORS headers,
+    so `fetch` rejects with a bare `TypeError`, which is why the original `res.status === 429`
+    check never fired.
+  - Controls: `VITE_SIMULATE_SPARKLINES=false` uses the real API for **every** row;
+    `VITE_SPARKLINE_REAL_ROWS=<n>` moves the cut-off (put them in `.env.local`).
+- Requests are cached in memory (45s for lists, 5 min for sparklines) and go through a
+  scheduler that paces starts, lets the pool list jump ahead of trend requests, and backs the
+  whole queue off when the API pushes back (`lib/gt.ts`).
+- On error the UI keeps the previous data; a real trend row that keeps failing shows `n/a`
+  rather than a skeleton forever. The table itself renders a skeleton for at least 600ms so it
   never flashes blank.
 
 ## Run

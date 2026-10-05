@@ -260,7 +260,13 @@ export function PulseTable({ pools, loading, window: w, density }: Props) {
 
                 {/* trend */}
                 <TableCell className="px-2">
-                  <Sparkline network={pool.network} poolAddress={pool.poolAddress} window={w} />
+                  <Sparkline
+                    network={pool.network}
+                    poolAddress={pool.poolAddress}
+                    window={w}
+                    index={i}
+                    change={change}
+                  />
                 </TableCell>
 
                 {/* gain */}
