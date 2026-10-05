@@ -104,15 +104,6 @@ function ChainCard({ chain }: { chain: ChainKey }) {
                         className={numberInput}
                       />
                     </div>
-                    {draft.buy.length === 1 && draft.buy.length < MAX_BUY_AMOUNTS && (
-                      <button
-                        onClick={() => patch({ buy: [...draft.buy, null] })}
-                        className="inline-flex h-8 items-center gap-1.5 rounded-md bg-secondary/95 px-3 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/60"
-                      >
-                        <Plus className="size-4" />
-                        Add more
-                      </button>
-                    )}
                     {i > 0 && (
                       <button
                         aria-label="Delete"
@@ -124,6 +115,17 @@ function ChainCard({ chain }: { chain: ChainKey }) {
                     )}
                   </div>
                 ))}
+                {/* Sigma stacks "Add more" under the last input at the input's own
+                    width, instead of sitting it beside the field where it wraps. */}
+                {draft.buy.length < MAX_BUY_AMOUNTS && (
+                  <button
+                    onClick={() => patch({ buy: [...draft.buy, null] })}
+                    className="inline-flex h-8 w-32 items-center justify-center gap-1.5 whitespace-nowrap rounded-md bg-secondary/95 text-sm font-medium text-secondary-foreground transition-colors hover:bg-secondary/60"
+                  >
+                    <Plus className="size-4" />
+                    Add more
+                  </button>
+                )}
               </div>
             </div>
 
