@@ -16,8 +16,12 @@ export type NearintentsQuote = {
     depositMemo?: string
     amountIn?: string
     amountInFormatted?: string
+    amountInUsd?: string
     amountOut?: string
+    amountOutFormatted?: string
+    amountOutUsd?: string
     minAmountIn?: string
+    minAmountOut?: string
     deadline?: string
     timeEstimate?: number
   }
@@ -63,12 +67,18 @@ export const TERMINAL_DEPOSIT_STATUSES: ReadonlySet<string> = new Set([
   DEPOSIT_STATUS.failed,
 ])
 
+export type SwapType = "EXACT_INPUT" | "EXACT_OUTPUT" | "FLEX_INPUT"
+
 export type QuoteRequest = {
   originAsset: string
   destinationAsset: string
   amount: string
   recipient: string
   refundTo: string
+  /** Preview quotes omit the deposit address. Defaults to an executable quote. */
+  dry?: boolean
+  /** Defaults to FLEX_INPUT so the deposit flow stays a flexible transfer. */
+  swapType?: SwapType
 }
 
 class NearintentsError extends Error {
@@ -129,11 +139,12 @@ async function request(path: string, init?: RequestInit): Promise<unknown> {
 }
 
 export async function nearintentsQuote(input: QuoteRequest): Promise<NearintentsQuote> {
+  const dry = input.dry ?? false
   const data = await request("/v0/quote", {
     method: "POST",
     body: JSON.stringify({
-      dry: false,
-      swapType: "FLEX_INPUT",
+      dry,
+      swapType: input.swapType ?? "FLEX_INPUT",
       depositType: "ORIGIN_CHAIN",
       recipientType: "DESTINATION_CHAIN",
       refundType: "ORIGIN_CHAIN",
@@ -145,12 +156,14 @@ export async function nearintentsQuote(input: QuoteRequest): Promise<Nearintents
       slippageTolerance: 100,
       deadline: new Date(Date.now() + 30 * 60_000).toISOString(),
       quoteWaitingTimeMs: 0,
-      referrer: "stableflow",
     }),
   })
   const quote = (data ?? {}) as NearintentsQuote
-  if (!quote.quote?.depositAddress?.trim()) {
+  if (!dry && !quote.quote?.depositAddress?.trim()) {
     throw new NearintentsError(quote.message?.trim() || "Quote did not return a deposit address")
+  }
+  if (dry && !quote.quote?.amountOut && !quote.quote?.amountIn) {
+    throw new NearintentsError(quote.message?.trim() || "Quote did not return an amount")
   }
   return quote
 }

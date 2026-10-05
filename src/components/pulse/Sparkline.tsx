@@ -73,7 +73,7 @@ export function Sparkline({
   useEffect(() => {
     if (!visible || simulate) return;
     let alive = true;
-    let timer: number | undefined;
+    let timer: ReturnType<typeof setTimeout> | undefined;
     setCandles(null);
     setFailed(false);
 

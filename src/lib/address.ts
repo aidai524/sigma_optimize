@@ -40,3 +40,10 @@ function matchesKind(value: string, kind: ChainKind): boolean {
 export function isAddressForChain(value: string, blockchain: string): boolean {
   return matchesKind(value, chainKind(blockchain))
 }
+
+/** First 5 characters, ellipsis, last 4. */
+export function shortAddress(value: string): string {
+  const text = trimmed(value)
+  if (text.length <= 9) return text
+  return `${text.slice(0, 5)}...${text.slice(-4)}`
+}

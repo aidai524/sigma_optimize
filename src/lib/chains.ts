@@ -22,10 +22,6 @@ export const DEPOSIT_CHAINS = [
   "near",
   "tron",
   "zec",
-  "bera",
-  "gnosis",
-  "monad",
-  "plasma",
   "scroll",
   "xlayer",
 ] as const

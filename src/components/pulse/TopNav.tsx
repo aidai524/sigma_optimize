@@ -52,6 +52,16 @@ function withLangCheck(html: string, lang: "en" | "zh"): string {
   return html.replace(checkRe, "").replace(re, `$1${check}`);
 }
 
+function withDepositButton(html: string): string {
+  const marker = '<span class="hidden sm:inline">Deposit</span></button>'
+  const start = html.indexOf('<button data-slot="button"')
+  const end = html.indexOf(marker)
+  if (start < 0 || end < 0 || start > end) return html
+  const button = html.slice(start, end + marker.length)
+  const patched = button.replace('class="', 'class="cursor-pointer hover:brightness-110 ')
+  return html.slice(0, start) + patched + html.slice(end + marker.length)
+}
+
 function withActiveNav(html: string, active: string): string {
   let out = html;
   for (const label of NAV_LABELS) {
@@ -300,7 +310,7 @@ export function TopNav({ active = "Discover", onNavigate }: Props) {
           } as CSSProperties
         }
         onClick={onHeaderClick}
-        dangerouslySetInnerHTML={{ __html: withActiveNav(baseHtml, active) }}
+        dangerouslySetInnerHTML={{ __html: withDepositButton(withActiveNav(baseHtml, active)) }}
       />
 
       {menu &&

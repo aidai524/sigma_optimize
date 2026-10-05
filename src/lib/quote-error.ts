@@ -61,6 +61,8 @@ export function formatQuoteError(
   return raw
 }
 
+const WALLET_REJECTED = /user rejected|user denied|rejected the request|user cancel(?:l)?ed|request cancelled|request canceled/i
+
 export function errorText(error: unknown): string {
   if (error && typeof error === "object" && "response" in error) {
     const data = (error as { response?: { data?: unknown } }).response?.data
@@ -69,8 +71,27 @@ export function errorText(error: unknown): string {
       if (typeof message === "string" && message.trim()) return message
     }
   }
+  if (error && typeof error === "object" && "shortMessage" in error) {
+    const shortMessage = (error as { shortMessage?: unknown }).shortMessage
+    if (typeof shortMessage === "string" && shortMessage.trim()) return shortMessage
+  }
   if (error instanceof Error && error.message.trim()) return error.message
   return ""
+}
+
+/** Wallet and transfer errors, without calldata or request dumps. */
+export function formatActionError(error: unknown, fallback: string): string {
+  const raw = (typeof error === "string" ? error : errorText(error)).trim()
+  if (!raw) return fallback
+  if (WALLET_REJECTED.test(raw) || rejectedCode(error)) return "User rejected transaction"
+  const head = raw.split(/\b(?:Request Arguments|Details|Version):/i)[0]?.trim()
+  return head || fallback
+}
+
+function rejectedCode(error: unknown): boolean {
+  if (!error || typeof error !== "object" || !("code" in error)) return false
+  const code = (error as { code?: unknown }).code
+  return code === 4001 || code === "4001" || code === "ACTION_REJECTED"
 }
 
 export function priceToDecimal(price: number): string | null {
@@ -107,6 +128,27 @@ export function usdMinor(usd: number, price: number, decimals: number, symbol: s
 /** Smallest-unit amount equal to about 1 USD. */
 export function oneUsdMinor(symbol: string, price: number, decimals: number): string | null {
   return usdMinor(1, price, decimals, symbol)
+}
+
+/** Smallest-unit integer for a human amount. Returns null for empty, zero, or junk. */
+export function toMinor(amount: string, decimals: number): string | null {
+  const text = amount.trim()
+  if (!text || !Number.isInteger(decimals) || decimals < 0) return null
+  try {
+    const value = new Big(text)
+    if (!value.gt(0)) return null
+    const minor = value.times(new Big(10).pow(decimals)).round(0, Big.roundDown)
+    if (!minor.gt(0)) return null
+    return minor.toFixed(0)
+  } catch {
+    return null
+  }
+}
+
+/** Human amount for an input, without thousands separators. */
+export function minorToInput(raw: string, decimals: number): string {
+  const fixed = new Big(raw).div(new Big(10).pow(decimals)).toFixed()
+  return fixed.replace(/(\.\d*?)0+$/, "$1").replace(/\.$/, "")
 }
 
 export function formatMinorAmount(raw: string, decimals: number): string {

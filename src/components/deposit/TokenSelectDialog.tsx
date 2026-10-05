@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react"
+import Big from "big.js"
 import { Search, X } from "lucide-react"
 import {
   Dialog,
@@ -8,6 +9,7 @@ import {
 } from "@/components/ui/dialog"
 import { chainLogoUrl, chainName, sortBlockchains, tokenLogoUrl } from "@/lib/chains"
 import { assetKey, type IntentsToken } from "@/lib/intents-tokens"
+import { formatBalance } from "@/lib/quote-error"
 import { cn } from "@/lib/utils"
 
 const ALL = "all"
@@ -18,6 +20,7 @@ type TokenSelectDialogProps = {
   tokens: IntentsToken[]
   loading: boolean
   selectedAssetId: string | null
+  balanceByAssetId?: Record<string, string | null>
   onSelect: (token: IntentsToken) => void
 }
 
@@ -33,8 +36,31 @@ function Mark(props: { src: string; label: string; className: string }) {
   return <img src={props.src} alt="" className={props.className} onError={() => setFailed(true)} />
 }
 
+function compareBalance(left: string | null | undefined, right: string | null | undefined): number {
+  const l = knownBalance(left)
+  const r = knownBalance(right)
+  if (l && r) {
+    if (l.eq(0) && !r.eq(0)) return 1
+    if (r.eq(0) && !l.eq(0)) return -1
+    return r.cmp(l)
+  }
+  if (l && !r) return -1
+  if (!l && r) return 1
+  return 0
+}
+
+function knownBalance(value: string | null | undefined): Big | null {
+  if (value == null || !value.trim()) return null
+  try {
+    const amount = new Big(value)
+    return amount.gt(0) ? amount : new Big(0)
+  } catch {
+    return null
+  }
+}
+
 export function TokenSelectDialog(props: TokenSelectDialogProps) {
-  const { open, onClose, tokens, loading, selectedAssetId, onSelect } = props
+  const { open, onClose, tokens, loading, selectedAssetId, balanceByAssetId, onSelect } = props
   const [search, setSearch] = useState("")
   const [chain, setChain] = useState(ALL)
 
@@ -49,13 +75,24 @@ export function TokenSelectDialog(props: TokenSelectDialogProps) {
     [tokens],
   )
   const query = search.trim().toLowerCase()
-  const visible = tokens.filter((token) => {
-    if (chain !== ALL && token.blockchain !== chain) return false
-    if (!query) return true
-    return token.symbol.toLowerCase().includes(query)
-      || token.blockchain.includes(query)
-      || (token.contractAddress?.toLowerCase().includes(query) ?? false)
-  })
+  const visible = useMemo(() => {
+    const filtered = tokens.filter((token) => {
+      if (chain !== ALL && token.blockchain !== chain) return false
+      if (!query) return true
+      return token.symbol.toLowerCase().includes(query)
+        || token.blockchain.includes(query)
+        || (token.contractAddress?.toLowerCase().includes(query) ?? false)
+    })
+    if (!balanceByAssetId) return filtered
+    const order = new Map(chains.map((code, index) => [code, index]))
+    return [...filtered].sort((a, b) => {
+      const balanceCmp = compareBalance(balanceByAssetId[a.assetId], balanceByAssetId[b.assetId])
+      if (balanceCmp !== 0) return balanceCmp
+      const chainCmp = (order.get(a.blockchain) ?? 1000) - (order.get(b.blockchain) ?? 1000)
+      if (chainCmp !== 0) return chainCmp
+      return a.symbol.localeCompare(b.symbol)
+    })
+  }, [tokens, chain, query, balanceByAssetId, chains])
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose() }}>
@@ -143,10 +180,15 @@ export function TokenSelectDialog(props: TokenSelectDialogProps) {
                       className="absolute -right-0.5 -bottom-0.5 size-3.5 rounded-[4px] border border-[#0e1220] object-cover"
                     />
                   </span>
-                  <span className="min-w-0">
+                  <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm font-semibold text-[#fafafa]">{token.symbol}</span>
                     <span className="mt-0.5 block truncate text-xs text-[#9a9aab]">{chainName(token.blockchain)}</span>
                   </span>
+                  {balanceByAssetId ? (
+                    <span className="shrink-0 text-sm text-[#fafafa]">
+                      {balanceByAssetId[token.assetId] == null ? "—" : formatBalance(balanceByAssetId[token.assetId] || "0")}
+                    </span>
+                  ) : null}
                   <span className="sr-only">{assetKey(token)}</span>
                 </button>
               )

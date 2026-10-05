@@ -10,8 +10,10 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConvertPanel } from "@/components/deposit/ConvertPanel"
 import { TokenSelectDialog } from "@/components/deposit/TokenSelectDialog"
 import { useDepositQuote } from "@/components/deposit/use-deposit-quote"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { isAddressForChain } from "@/lib/address"
 import {
   chainKind,
@@ -75,6 +77,12 @@ function formatAppFeePercent(fees: AppFee[] | undefined): string {
 
 export function DepositDialog(props: { open: boolean; onOpenChange: (open: boolean) => void }) {
   const { open, onOpenChange } = props
+  const [tab, setTab] = useState<"deposit" | "convert">("deposit")
+  const [trackedOpen, setTrackedOpen] = useState(open)
+  if (open !== trackedOpen) {
+    setTrackedOpen(open)
+    if (open) setTab("deposit")
+  }
   const prefs = useDepositPrefs()
   const balance = useDepositBalance()
   const tokenSnapshot = useSyncExternalStore(subscribeIntentsTokens, getIntentsTokensSnapshot, getIntentsTokensSnapshot)
@@ -83,6 +91,7 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
   const tokensError = tokenSnapshot.error
   const [pickerOpen, setPickerOpen] = useState(false)
   const [receivePickerOpen, setReceivePickerOpen] = useState(false)
+  const depositActive = open && tab === "deposit"
 
   const depositTokens = tokens.filter(isDepositSourceToken)
   const receiveTokens = tokens.filter(isReceiveGasToken)
@@ -106,7 +115,7 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
   })()
 
   const quoteState = useDepositQuote({
-    open,
+    open: depositActive,
     quiet: tokensLoading || (!source && !tokensError),
     source,
     destination: native,
@@ -117,7 +126,7 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
 
   const accountValid = isAddressForChain(account, destination.id)
   useEffect(() => {
-    if (!open) return
+    if (!depositActive) return
     const setBalance = useDepositBalance.getState().setBalance
     setBalance({
       chain: destination.id,
@@ -174,10 +183,10 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
       stop = true
       window.clearInterval(timer)
     }
-  }, [open, account, accountValid, destination.id, destination.symbol, native])
+  }, [depositActive, account, accountValid, destination.id, destination.symbol, native])
 
   useEffect(() => {
-    if (!open || quoteState.status !== "SUCCESS" || !accountValid || !native) return
+    if (!depositActive || quoteState.status !== "SUCCESS" || !accountValid || !native) return
     let stop = false
     const setBalance = useDepositBalance.getState().setBalance
     void readNativeBalance(destination.id, account.trim())
@@ -197,7 +206,7 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
     return () => {
       stop = true
     }
-  }, [open, quoteState.status, account, accountValid, destination.id, destination.symbol, native])
+  }, [depositActive, quoteState.status, account, accountValid, destination.id, destination.symbol, native])
 
   const formLocked = quoteState.quoting || (quoteState.locked && quoteState.phase !== "success")
   const depositAddress = quoteState.quote?.quote?.depositAddress?.trim() || ""
@@ -211,10 +220,23 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent className="gap-0 overflow-hidden p-0 sm:max-w-[480px]">
-          <DialogHeader className="border-b border-border px-4 py-3 pr-10">
-            <DialogTitle>Deposit</DialogTitle>
+          <DialogHeader className="border-b border-border px-4 py-3 pr-12">
+            <DialogTitle className="sr-only">Deposit</DialogTitle>
+            <Tabs value={tab} onValueChange={(value) => {
+              if (value === "convert" || value === "deposit") setTab(value)
+            }}>
+              <TabsList className="grid h-10 w-full grid-cols-2">
+                <TabsTrigger value="convert" className="cursor-pointer">Convert</TabsTrigger>
+                <TabsTrigger value="deposit" className="cursor-pointer">Deposit</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </DialogHeader>
-          <div className="flex flex-col gap-4 px-4 py-4">
+          <div className="flex min-w-0 flex-col gap-4 px-4 py-4">
+            <div className={tab === "convert" ? "min-w-0" : "hidden"}>
+              <ConvertPanel active={open && tab === "convert"} tokens={tokens} tokensLoading={tokensLoading} />
+            </div>
+            {tab === "deposit" ? (
+            <>
             <div>
               <div className="flex items-center justify-between text-xs tracking-wide text-muted-foreground uppercase">
                 <span>Available on {destination.label}</span>
@@ -414,6 +436,8 @@ export function DepositDialog(props: { open: boolean; onOpenChange: (open: boole
               >
                 Copy Address
               </button>
+            ) : null}
+            </>
             ) : null}
           </div>
         </DialogContent>

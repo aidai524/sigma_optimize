@@ -102,6 +102,13 @@ export function isReceiveGasToken(token: Pick<IntentsToken, "blockchain" | "symb
   return Boolean(chain && chain.symbol === token.symbol && isCurrentGasToken(token))
 }
 
+/** Gas plus USDT / USDT0 / USDC on the four receive chains. */
+export function isConvertToken(token: Pick<IntentsToken, "blockchain" | "symbol" | "contractAddress">): boolean {
+  if (!RECEIVE_CHAINS.some((chain) => chain.id === token.blockchain)) return false
+  if (DEPOSIT_SYMBOLS.has(token.symbol.trim().toUpperCase())) return true
+  return isReceiveGasToken(token)
+}
+
 export function assetKey(token: Pick<IntentsToken, "blockchain" | "symbol" | "contractAddress">): string {
   const addr = String(token.contractAddress || "").trim() || "native"
   return `${token.blockchain}:${token.symbol}:${addr}`
