@@ -14,6 +14,14 @@
  *
  * This is presentation data. It is documented in the README, and
  * `VITE_SIMULATE_SPARKLINES=false` makes every row use the API instead.
+ *
+ * **This is a temporary workaround, not the intended design.** The project has no
+ * paid CoinGecko plan, and the free anonymous GeckoTerminal tier will not serve one
+ * OHLCV request per row. With a paid key the onchain endpoints
+ * (`https://pro-api.coingecko.com/api/v3/onchain/...`, `x-cg-pro-api-key`) allow far
+ * more calls per minute, so every row can load real candles normally — that switch is
+ * `VITE_SIMULATE_SPARKLINES=false` plus pointing `lib/gt.ts` at the paid host.
+ * Nothing else in the table is affected either way.
  */
 import type { OhlcvCandle } from "@/lib/types";
 

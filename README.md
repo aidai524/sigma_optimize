@@ -32,6 +32,12 @@ in the competitor comparison. Built for the Sigma frontend trial task.
   - Why: the free GeckoTerminal tier refuses a burst of one OHLCV request per row. A 20-row
     page meant ~20 near-simultaneous requests; the first couple succeeded and the rest were
     refused, which left most of the trend column empty.
+  - **Temporary workaround, not the intended design.** We do not hold a paid CoinGecko
+    plan, so most rows cannot be loaded from the API today. With a paid key the onchain
+    endpoints (`https://pro-api.coingecko.com/api/v3/onchain/...` plus `x-cg-pro-api-key`)
+    allow far more calls per minute, every row loads real candles normally, and this flag
+    can be dropped — switch with `VITE_SIMULATE_SPARKLINES=false` and point `lib/gt.ts` at
+    the paid host. Nothing else in the table is simulated either way.
   - The refusal never arrives as a `429` Response — the error reply carries no CORS headers,
     so `fetch` rejects with a bare `TypeError`, which is why the original `res.status === 429`
     check never fired.

@@ -16,6 +16,11 @@ export const RPC_URLS = {
  *
  * Set `VITE_SIMULATE_SPARKLINES=false` to make every row use the API instead, or
  * `VITE_SPARKLINE_REAL_ROWS=<n>` to move the cut-off.
+ *
+ * **Temporary, pending a paid API plan.** This is a workaround for the free tier's
+ * burst limit, not the intended end state: we do not currently hold a paid CoinGecko
+ * key, so most rows cannot be loaded from the API. With a paid key every row loads
+ * for real and this flag can go away.
  */
 export const SIMULATE_SPARKLINES = import.meta.env.VITE_SIMULATE_SPARKLINES !== "false"
 export const REAL_SPARKLINE_ROWS = Number(import.meta.env.VITE_SPARKLINE_REAL_ROWS ?? 2)
