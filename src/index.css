@@ -163,3 +163,16 @@
     @apply font-sans;
     }
 }
+
+/**
+ * Sonner's toast description ships as #3f3f3f in its light theme and #e8e8e8 in its dark one.
+ * Nothing mounts a next-themes provider, so `useTheme()` is empty and the toaster falls back
+ * to "system" — it follows the OS while the app itself is hard-coded dark (`<html class="dark">`).
+ * On a light system that means a white toast inside a dark app, with sonner's light-theme grey
+ * on it. Align that case with the app's muted tone; sonner's own dark value is left alone.
+ */
+[data-sonner-toaster][data-sonner-theme="light"]
+  [data-sonner-toast][data-styled="true"]
+  [data-description] {
+  color: #6f6f6f;
+}
