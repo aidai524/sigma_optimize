@@ -8,8 +8,13 @@ export type Preset = {
   priority: number; // gwei-ish
 };
 
+/**
+ * P1's slippage is 5% because that is the value Sigma actually ships (measured on the live
+ * terminal during the walkthrough). It also keeps the panel's high-slippage warning honest:
+ * at 10% the warning would be on in the factory state, which makes it look broken.
+ */
 export const DEFAULT_PRESETS: Preset[] = [
-  { id: "P1", amount: 0.1, slippage: 10, priority: 0.001 },
+  { id: "P1", amount: 0.1, slippage: 5, priority: 0.001 },
   { id: "P2", amount: 0.5, slippage: 15, priority: 0.002 },
   { id: "P3", amount: 1, slippage: 25, priority: 0.005 },
 ];
@@ -20,6 +25,7 @@ type PresetsCtx = {
   active: Preset;
   setActiveId: (id: Preset["id"]) => void;
   updatePreset: (id: Preset["id"], patch: Partial<Preset>) => void;
+  resetPresets: () => void;
 };
 
 const Ctx = createContext<PresetsCtx | null>(null);
@@ -52,10 +58,12 @@ export function PresetsProvider({ children }: { children: ReactNode }) {
     setPresets((ps) => ps.map((p) => (p.id === id ? { ...p, ...patch } : p)));
   }, []);
 
+  const resetPresets = useCallback(() => setPresets(DEFAULT_PRESETS), []);
+
   const value = useMemo<PresetsCtx>(() => {
     const active = presets.find((p) => p.id === activeId) ?? presets[0];
-    return { presets, activeId, active, setActiveId, updatePreset };
-  }, [presets, activeId, updatePreset]);
+    return { presets, activeId, active, setActiveId, updatePreset, resetPresets };
+  }, [presets, activeId, updatePreset, resetPresets]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

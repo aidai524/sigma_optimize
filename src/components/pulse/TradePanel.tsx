@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import type { TrendingPool } from "@/lib/types";
 import { compactUsd, mcapOf, price } from "@/lib/format";
 import { nativeSymbol } from "@/components/pulse/QuickBuyButton";
+import { usePresets } from "@/components/pulse/presets";
 
 type Props = {
   pool: TrendingPool | null;
@@ -28,17 +29,27 @@ const AMOUNT_PRESETS = [0.1, 0.2, 0.5, 1];
 const ORDER_TYPES = ["Market", "Limit", "DCA"] as const;
 const PRESET_TABS = ["P1", "P2", "P3"] as const;
 
+/**
+ * Amount and slippage come from the active preset, not from panel-local state.
+ *
+ * They used to be two `useState`s here, disconnected from the store the toolbar dropdown
+ * reads — so the toolbar could say `P2 · slip 15%` while this panel still showed 10%, and
+ * the P1/P2/P3 row below only changed its own highlight. Both surfaces now write to the
+ * same record, which is also why editing slippage on either one survives a reload.
+ */
 export function TradePanel({ pool, open, onClose }: Props) {
+  const { active, activeId, setActiveId, updatePreset } = usePresets();
   const [side, setSide] = useState<"Buy" | "Sell">("Buy");
-  const [slippage, setSlippage] = useState(10);
   const [orderType, setOrderType] = useState<(typeof ORDER_TYPES)[number]>("Market");
-  const [presetTab, setPresetTab] = useState<(typeof PRESET_TABS)[number]>("P1");
   const [mev, setMev] = useState(true);
-  const [amount, setAmount] = useState(0.5);
 
   if (!open) return null;
 
   const native = pool ? nativeSymbol(pool.network) : "SOL";
+  const slippage = active.slippage;
+  const amount = active.amount;
+  const setAmount = (v: number) => updatePreset(activeId, { amount: v });
+  const setSlippage = (v: number) => updatePreset(activeId, { slippage: v });
   const highSlippage = slippage >= 10;
   const buy = side === "Buy";
 
@@ -167,7 +178,7 @@ export function TradePanel({ pool, open, onClose }: Props) {
             )}
             onClick={() =>
               toast.success(`${side} ${amount} ${native} of ${pool.symbol}`, {
-                description: `Slippage ${slippage}% · MEV ${mev ? "on" : "off"}`,
+                description: `Preset ${activeId} · slippage ${slippage}% · priority ${active.priority} · MEV ${mev ? "on" : "off"}`,
               })
             }
           >
@@ -182,7 +193,7 @@ export function TradePanel({ pool, open, onClose }: Props) {
             </span>
             <span className="flex items-center gap-1">
               <Fuel className="size-3" />
-              0.001
+              {active.priority}
             </span>
             <label className="ml-auto flex items-center gap-1.5">
               MEV
@@ -215,15 +226,16 @@ export function TradePanel({ pool, open, onClose }: Props) {
             </div>
           )}
 
-          {/* preset tabs */}
+          {/* preset tabs — switching actually re-reads amount + slippage */}
           <div className="grid grid-cols-4 gap-1.5 border-t border-border pt-3">
             {PRESET_TABS.map((p) => (
               <button
                 key={p}
-                onClick={() => setPresetTab(p)}
+                onClick={() => setActiveId(p)}
+                title={`Use ${p}`}
                 className={cn(
-                  "rounded-lg border-[0.5px] py-1.5 text-xs font-medium transition-colors",
-                  presetTab === p
+                  "cursor-pointer rounded-lg border-[0.5px] py-1.5 text-xs font-medium transition-colors",
+                  activeId === p
                     ? "border-brand/60 bg-brand/10 text-brand"
                     : "border-transparent text-muted-foreground hover:text-foreground",
                 )}
@@ -231,9 +243,9 @@ export function TradePanel({ pool, open, onClose }: Props) {
                 {p}
               </button>
             ))}
-            <button className="grid place-items-center text-muted-foreground hover:text-foreground">
-              <SlidersHorizontal className="size-3.5" />
-            </button>
+            <span className="grid place-items-center text-[11px] text-muted-foreground">
+              {active.amount} {native} · {slippage}%
+            </span>
           </div>
         </div>
       ) : (
