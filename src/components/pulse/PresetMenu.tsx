@@ -50,7 +50,7 @@ export function PresetMenu() {
 
       {open && (
         <div className="absolute top-9 right-0 z-50 w-[300px] rounded-lg border border-border bg-popover p-3 shadow-2xl">
-          <SlippageControls side="buy" />
+          <SlippageControls />
           <div className="mt-3 border-t border-border pt-3">
             <PresetTabs
               onOpenAdvanced={() => {

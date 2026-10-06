@@ -4,7 +4,6 @@ import { Toaster } from "@/components/ui/sonner";
 import { TopNav } from "@/components/pulse/TopNav";
 import { Toolbar } from "@/components/pulse/Toolbar";
 import { PulseTable } from "@/components/pulse/PulseTable";
-import { TradePanel } from "@/components/pulse/TradePanel";
 import { PresetsProvider } from "@/components/pulse/presets";
 import { QuickTradesProvider } from "@/components/settings/quickTrades";
 import { WalletsProvider } from "@/stores/wallets";
@@ -28,7 +27,6 @@ function DiscoverPage() {
   const [windowKey, setWindowKey] = useState<WindowKey>("h1");
   const [density, setDensity] = useState<Density>("comfortable");
   const [sort, setSort] = useState<(typeof SORTS)[number]>("Trending");
-  const [tradeOpen, setTradeOpen] = useState(false);
 
   const { pools, loading, error, refreshedAt, reload } = useTrending(network);
 
@@ -38,8 +36,6 @@ function DiscoverPage() {
     if (sort === "Recent") list.sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt));
     return list;
   }, [pools, sort, windowKey]);
-
-  const topPool = sorted[0] ?? null;
 
   return (
     <>
@@ -69,7 +65,6 @@ function DiscoverPage() {
             loading={loading}
             refreshedAt={refreshedAt}
             onRefresh={reload}
-            onOpenTrade={() => setTradeOpen(true)}
           />
         </div>
       </div>
@@ -87,8 +82,6 @@ function DiscoverPage() {
           <PulseTable pools={sorted} loading={loading} window={windowKey} density={density} />
         )}
       </div>
-
-      <TradePanel pool={topPool} open={tradeOpen} onClose={() => setTradeOpen(false)} />
     </>
   );
 }

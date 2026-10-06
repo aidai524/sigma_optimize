@@ -4,22 +4,19 @@ import { cn } from "@/lib/utils";
 import { usePresets, type Preset } from "@/components/pulse/presets";
 
 /**
- * The block Sigma keeps at the bottom of its Instant Trade window: the live slippage and gas
+ * Sigma keeps this block at the bottom of its Instant Trade window: the live slippage and gas
  * readout, the MEV switch, the slippage shortcuts and the warning that fires once slippage is
  * high enough to matter.
  *
- * Both the toolbar's preset popup and the trade panel render *this* component, so the two
- * surfaces cannot drift apart visually or in value.
+ * It lives on the toolbar's preset popup, which is now the only surface that changes slippage.
  */
 const SLIPPAGE_PRESETS = [0.5, 1, 5, 10, 25];
 
-export function SlippageControls({ side = "buy" }: { side?: "buy" | "sell" }) {
+export function SlippageControls() {
   const { active, activeId, updatePreset, mev, setMev } = usePresets();
-  const buy = side === "buy";
-  const slippage = buy ? active.slippage : active.sellSlippage;
-  const gas = buy ? active.gas : active.sellGas;
-  const setSlippage = (v: number) =>
-    updatePreset(activeId, buy ? { slippage: v } : { sellSlippage: v });
+  const slippage = active.slippage;
+  const gas = active.gas;
+  const setSlippage = (v: number) => updatePreset(activeId, { slippage: v });
 
   return (
     <div className="space-y-3">

@@ -5,11 +5,11 @@ import { cn } from "@/lib/utils";
 import { shortAddress, useWallets } from "@/stores/wallets";
 
 /**
- * Sigma puts this on the toolbar's `[list icon] 1 ⌄` control: the panel is titled
+ * Sigma puts this on the toolbar's `[list icon] N ⌄` control: the panel is titled
  * `Select Wallet` and lists one row per trading wallet — name, truncated address, balance —
  * with `+ Add Wallet` underneath.
  *
- * The trigger used to open the Instant Trade panel, which was simply the wrong control.
+ * Ours was wired to open the trade panel, which was simply the wrong control for this chip.
  */
 export function SelectWallet() {
   const { wallets, activeId, setActiveId, rename, canAddWallet } = useWallets();

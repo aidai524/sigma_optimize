@@ -23,7 +23,6 @@ type Props = {
   loading: boolean;
   refreshedAt: number | null;
   onRefresh: () => void;
-  onOpenTrade: () => void;
 };
 
 const WINDOWS: { key: WindowKey; label: string }[] = [
@@ -53,7 +52,6 @@ export function Toolbar({
   setWindow,
   density,
   setDensity,
-  onOpenTrade,
 }: Props) {
   const { active, showAmount } = usePresets();
 
@@ -92,13 +90,6 @@ export function Toolbar({
 
       {/* Sigma's `[list icon] N ⌄` control opens Select Wallet, not the trade panel. */}
       <SelectWallet />
-
-      {/* The trade panel needs its own trigger now that the wallet control above is correct;
-          Sigma reaches the same window from the token's chart view. */}
-      <button onClick={onOpenTrade} title="Instant Trade" className={surfaceBtn}>
-        <Zap className="size-3.5" />
-        Instant Trade
-      </button>
 
       {/* quick buy preset */}
       <div className="flex h-8 items-center gap-2 rounded-lg bg-secondary px-2.5">
