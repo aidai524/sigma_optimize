@@ -108,7 +108,7 @@ export function PresetMenu({ network }: { network: NetworkId }) {
               onChange={(e) => updatePreset(activeId, { amount: Number(e.target.value) || 0 })}
               className="ml-auto w-20 bg-transparent text-right text-sm tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
             />
-            <span className="text-sm text-muted-foreground">{nativeSymbol(network)}</span>
+            <span className="text-sm text-foreground/70">{nativeSymbol(network)}</span>
             <button
               onClick={() => amountRef.current?.focus()}
               title="Edit amount"

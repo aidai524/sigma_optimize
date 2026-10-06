@@ -147,7 +147,7 @@ export default function App() {
             />
             {page === "Settings" ? <SettingsPage /> : <DiscoverPage />}
             <StatusBar />
-            <Toaster position="bottom-center" />
+            <Toaster position="top-center" />
           </div>
         </QuickTradesProvider>
       </PresetsProvider>

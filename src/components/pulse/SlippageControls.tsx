@@ -24,7 +24,10 @@ function Param({
   label: string;
 }) {
   return (
-    <span className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground" title={label}>
+    <span
+      className="flex items-center gap-1 text-xs tabular-nums text-foreground/85"
+      title={label}
+    >
       {icon}
       {value}
     </span>
@@ -49,7 +52,7 @@ export function SlippageControls() {
         <Param icon={<Fuel className="size-3" />} value={String(active.gas)} label="Buy gas" />
       </div>
 
-      <label className="flex cursor-pointer items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
+      <label className="flex cursor-pointer items-center justify-end gap-1.5 text-xs text-foreground/70">
         MEV
         <Switch
           aria-label="MEV protection"
@@ -60,7 +63,7 @@ export function SlippageControls() {
       </label>
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-muted-foreground">Custom slippage</span>
+        <span className="text-xs text-foreground/70">Custom slippage</span>
         <div className="ml-auto flex h-7 w-20 items-center rounded-sm border border-input px-1.5 focus-within:ring-1 focus-within:ring-ring">
           <input
             type="number"
@@ -73,7 +76,7 @@ export function SlippageControls() {
             onChange={(e) => setSlippage(Number(e.target.value) || 0)}
             className="w-full bg-transparent text-right text-xs tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
-          <span className="text-xs text-muted-foreground">%</span>
+          <span className="text-xs text-foreground/70">%</span>
         </div>
       </div>
 
@@ -86,7 +89,7 @@ export function SlippageControls() {
               "flex-1 cursor-pointer rounded-md border-[0.5px] py-1 text-xs font-medium tabular-nums transition-colors",
               slippage === s
                 ? "border-brand/60 bg-brand/10 text-brand"
-                : "border-border bg-secondary text-muted-foreground hover:text-foreground",
+                : "border-border bg-secondary text-foreground/70 hover:text-foreground",
             )}
           >
             {s}%
@@ -118,7 +121,7 @@ export function PresetTabs() {
             "cursor-pointer rounded-lg border-[0.5px] py-2 text-sm font-medium transition-colors",
             activeId === p.id
               ? "border-transparent bg-secondary text-brand"
-              : "border-transparent text-muted-foreground hover:text-foreground",
+              : "border-transparent text-foreground/70 hover:text-foreground",
           )}
         >
           {p.id}

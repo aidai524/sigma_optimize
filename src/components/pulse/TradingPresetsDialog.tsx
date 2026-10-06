@@ -43,9 +43,9 @@ function Field({ label, value, suffix, min = 0, max, step = 1, onChange }: Field
           onChange={(e) => onChange(Number(e.target.value) || 0)}
           className="w-full bg-transparent text-center text-lg font-semibold tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
         />
-        {suffix && <span className="text-sm text-muted-foreground">{suffix}</span>}
+        {suffix && <span className="text-sm text-foreground/70">{suffix}</span>}
       </span>
-      <span className="mt-0.5 text-center text-[10px] tracking-wide text-muted-foreground uppercase">
+      <span className="mt-0.5 text-center text-[11px] tracking-wide text-foreground/65 uppercase">
         {label}
       </span>
     </label>
@@ -70,7 +70,7 @@ function PresetRow({
             "cursor-pointer rounded-lg border-[0.5px] py-2 text-sm font-medium transition-colors",
             activeId === p.id
               ? "border-brand/60 bg-brand/10 text-brand"
-              : "border-transparent bg-secondary/40 text-muted-foreground hover:text-foreground",
+              : "border-transparent bg-secondary/40 text-foreground/70 hover:text-foreground",
           )}
         >
           {p.id}
@@ -119,7 +119,7 @@ export function TradingPresetsDialog({ open, onClose }: { open: boolean; onClose
               onClick={() => setSide(s)}
               className={cn(
                 "cursor-pointer rounded-lg py-2.5 text-sm font-semibold transition-colors",
-                side === s ? "bg-secondary text-foreground" : "text-muted-foreground hover:text-foreground",
+                side === s ? "bg-secondary text-foreground" : "text-foreground/70 hover:text-foreground",
               )}
             >
               {s === "buy" ? "Buy Settings" : "Sell Settings"}
@@ -131,8 +131,8 @@ export function TradingPresetsDialog({ open, onClose }: { open: boolean; onClose
           {side === "buy" && (
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs text-muted-foreground">Button Presets</span>
-                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-muted-foreground">
+                <span className="text-xs text-foreground/70">Button Presets</span>
+                <label className="flex cursor-pointer items-center gap-1.5 text-xs text-foreground/70">
                   S Amount
                   <Switch
                     aria-label="Show amount on the quick buy buttons"
@@ -142,7 +142,7 @@ export function TradingPresetsDialog({ open, onClose }: { open: boolean; onClose
                   />
                 </label>
               </div>
-              <div className="text-xs text-muted-foreground">Buy amount buttons ({native})</div>
+              <div className="text-xs text-foreground/70">Buy amount buttons ({native})</div>
               <div className="grid grid-cols-4 gap-2">
                 {amountButtons.map((a, i) => (
                   <input
@@ -222,7 +222,7 @@ export function TradingPresetsDialog({ open, onClose }: { open: boolean; onClose
             <div className="flex items-start justify-between gap-4 rounded-lg border border-border px-3 py-2.5">
               <div className="min-w-0">
                 <div className="text-sm font-medium">Alpha Mode</div>
-                <div className="text-xs text-muted-foreground">
+                <div className="text-xs text-foreground/60">
                   Disables all security checks. High risk if enabled.
                 </div>
               </div>
@@ -240,7 +240,7 @@ export function TradingPresetsDialog({ open, onClose }: { open: boolean; onClose
                         ? opt.on
                           ? "bg-sell text-sell-foreground"
                           : "bg-secondary text-foreground"
-                        : "text-muted-foreground hover:text-foreground",
+                        : "text-foreground/70 hover:text-foreground",
                     )}
                   >
                     {opt.label}
@@ -253,12 +253,12 @@ export function TradingPresetsDialog({ open, onClose }: { open: boolean; onClose
           <div className="flex items-center justify-between border-t border-border pt-3">
             <button
               onClick={() => resetPreset(activeId)}
-              className="flex cursor-pointer items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+              className="flex cursor-pointer items-center gap-2 text-sm text-foreground/70 transition-colors hover:text-foreground"
             >
               <RotateCcw className="size-3.5" />
               Reset {activeId}
             </button>
-            <span className="text-[11px] text-muted-foreground tabular-nums">
+            <span className="text-[11px] text-foreground/60 tabular-nums">
               {presets.length} presets · MEV {mev ? "on" : "off"}
             </span>
           </div>
