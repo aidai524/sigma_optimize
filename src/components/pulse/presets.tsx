@@ -63,6 +63,14 @@ type PresetsCtx = {
   /** `Button Presets → S Amount`: whether the quick-buy buttons print their amount. */
   showAmount: boolean;
   setShowAmount: (next: boolean) => void;
+  /**
+   * A row's Quick Buy button sets this when the amount has never been configured, so the
+   * toolbar popup opens and the amount field takes focus. `amount <= 0` is what "not
+   * configured" means — a preset whose amount is zero cannot buy anything.
+   */
+  amountEditorRequested: boolean;
+  requestAmountEditor: () => void;
+  clearAmountEditorRequest: () => void;
   setActiveId: (id: Preset["id"]) => void;
   updatePreset: (id: Preset["id"], patch: Partial<Preset>) => void;
   setAmountButtons: (next: number[]) => void;
@@ -108,6 +116,10 @@ export function PresetsProvider({ children }: { children: ReactNode }) {
   });
   const [mev, setMev] = useState(() => localStorage.getItem(LS_MEV) !== "off");
   const [showAmount, setShowAmount] = useState(() => localStorage.getItem(LS_SHOW_AMOUNT) !== "off");
+  const [amountEditorRequested, setAmountEditorRequested] = useState(false);
+
+  const requestAmountEditor = useCallback(() => setAmountEditorRequested(true), []);
+  const clearAmountEditorRequest = useCallback(() => setAmountEditorRequested(false), []);
 
   useEffect(() => {
     localStorage.setItem(LS_KEY, JSON.stringify(presets));
@@ -145,12 +157,15 @@ export function PresetsProvider({ children }: { children: ReactNode }) {
       setMev,
       showAmount,
       setShowAmount,
+      amountEditorRequested,
+      requestAmountEditor,
+      clearAmountEditorRequest,
       setActiveId,
       updatePreset,
       setAmountButtons,
       resetPreset,
     };
-  }, [presets, amountButtons, activeId, mev, showAmount, updatePreset, resetPreset]);
+  }, [presets, amountButtons, activeId, mev, showAmount, amountEditorRequested, updatePreset, resetPreset, requestAmountEditor, clearAmountEditorRequest]);
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
 }

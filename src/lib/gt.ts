@@ -171,6 +171,14 @@ export const NETWORKS = [
 
 export type NetworkId = (typeof NETWORKS)[number]["id"];
 
+/** The dot colours Sigma uses for each chain in the toolbar and the wallet chips. */
+export const NETWORK_COLORS: Record<NetworkId, string> = {
+  solana: "#9945ff",
+  base: "#0052ff",
+  eth: "#6274ff",
+  bsc: "#f0b90b",
+};
+
 // --- normalised models ------------------------------------------------------
 export function normalizePool(raw: GtPool, images?: Map<string, string>): TrendingPool {
   const a = raw.attributes;

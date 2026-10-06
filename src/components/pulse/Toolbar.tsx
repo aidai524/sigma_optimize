@@ -9,7 +9,7 @@ import {
 import { usePresets } from "@/components/pulse/presets";
 import { PresetMenu } from "@/components/pulse/PresetMenu";
 import { SelectWallet } from "@/components/pulse/SelectWallet";
-import { NETWORKS, type NetworkId, type WindowKey } from "@/lib/gt";
+import { NETWORKS, NETWORK_COLORS, type NetworkId, type WindowKey } from "@/lib/gt";
 
 type Density = "comfortable" | "compact";
 
@@ -32,12 +32,7 @@ const WINDOWS: { key: WindowKey; label: string }[] = [
   { key: "h24", label: "24h" },
 ];
 
-const CHAIN_COLORS: Record<string, string> = {
-  solana: "#9945ff",
-  base: "#0052ff",
-  eth: "#6274ff",
-  bsc: "#f0b90b",
-};
+const CHAIN_COLORS = NETWORK_COLORS;
 
 // Sigma's control buttons: 32px, radius 8, 6% white surface.
 const surfaceBtn =
@@ -105,7 +100,7 @@ export function Toolbar({
           </>
         )}
         <span className="h-4 w-px bg-border" />
-        <PresetMenu />
+        <PresetMenu network={network} />
       </div>
 
       {/* chain multi-select */}

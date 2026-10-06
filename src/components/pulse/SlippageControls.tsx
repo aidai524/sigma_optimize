@@ -1,43 +1,80 @@
-import { AlertTriangle, Fuel, SlidersHorizontal } from "lucide-react";
+import { AlertTriangle, Fuel, Repeat, SlidersHorizontal, Zap } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
-import { usePresets, type Preset } from "@/components/pulse/presets";
+import { usePresets } from "@/components/pulse/presets";
 
 /**
- * Sigma keeps this block at the bottom of its Instant Trade window: the live slippage and gas
- * readout, the MEV switch, the slippage shortcuts and the warning that fires once slippage is
- * high enough to matter.
+ * Sigma's preset readout. Its Quick Buy settings popover prints all four values —
+ * `5%  25%  1,000  0.001` — and ours showed only two of them behind an edit affordance,
+ * which left a user unable to see what they were about to change. So: show all four, then
+ * give slippage a custom field next to the shortcuts.
  *
- * It lives on the toolbar's preset popup, which is now the only surface that changes slippage.
+ * The other three are edited in the `Trading Presets` dialog one level down, which is where
+ * Sigma keeps them too.
  */
 const SLIPPAGE_PRESETS = [0.5, 1, 5, 10, 25];
+
+function Param({
+  icon,
+  value,
+  label,
+}: {
+  icon: React.ReactNode;
+  value: string;
+  label: string;
+}) {
+  return (
+    <span className="flex items-center gap-1 text-[11px] tabular-nums text-muted-foreground" title={label}>
+      {icon}
+      {value}
+    </span>
+  );
+}
 
 export function SlippageControls() {
   const { active, activeId, updatePreset, mev, setMev } = usePresets();
   const slippage = active.slippage;
-  const gas = active.gas;
   const setSlippage = (v: number) => updatePreset(activeId, { slippage: v });
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
-        <span className="flex items-center gap-1">
-          <SlidersHorizontal className="size-3" />
-          <span className="tabular-nums">{slippage}%</span>
-        </span>
-        <span className="flex items-center gap-1">
-          <Fuel className="size-3" />
-          <span className="tabular-nums">{gas}</span>
-        </span>
-        <label className="ml-auto flex select-none items-center gap-1.5">
-          MEV
-          <Switch
-            aria-label="MEV protection"
-            checked={mev}
-            onCheckedChange={(checked) => setMev(checked === true)}
-            className="scale-75"
+      <div className="flex items-center gap-4">
+        <Param icon={<SlidersHorizontal className="size-3" />} value={`${slippage}%`} label="Slippage" />
+        <Param icon={<Repeat className="size-3" />} value={`${active.maxPriceImpact}%`} label="Max price impact" />
+        <Param
+          icon={<Zap className="size-3" />}
+          value={active.minLiquidity.toLocaleString()}
+          label="Minimum liquidity"
+        />
+        <Param icon={<Fuel className="size-3" />} value={String(active.gas)} label="Buy gas" />
+      </div>
+
+      <label className="flex cursor-pointer items-center justify-end gap-1.5 text-[11px] text-muted-foreground">
+        MEV
+        <Switch
+          aria-label="MEV protection"
+          checked={mev}
+          onCheckedChange={(checked) => setMev(checked === true)}
+          className="scale-75"
+        />
+      </label>
+
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-muted-foreground">Custom slippage</span>
+        <div className="ml-auto flex h-7 w-20 items-center rounded-sm border border-input px-1.5 focus-within:ring-1 focus-within:ring-ring">
+          <input
+            type="number"
+            min={0}
+            max={100}
+            step={0.5}
+            inputMode="decimal"
+            aria-label="Custom slippage"
+            value={slippage}
+            onChange={(e) => setSlippage(Number(e.target.value) || 0)}
+            className="w-full bg-transparent text-right text-xs tabular-nums outline-none [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
           />
-        </label>
+          <span className="text-xs text-muted-foreground">%</span>
+        </div>
       </div>
 
       <div className="flex gap-1.5">
@@ -67,39 +104,26 @@ export function SlippageControls() {
   );
 }
 
-/**
- * `P1 P2 P3` plus the button that opens the full `Trading Presets` dialog — Sigma's layout,
- * where the shortcut switching lives on the panel and the advanced fields live one level down.
- */
-export function PresetTabs({ onOpenAdvanced }: { onOpenAdvanced: () => void }) {
-  const { presets, active, activeId, setActiveId } = usePresets();
+/** `P1 P2 P3` — the preset switcher itself. */
+export function PresetTabs() {
+  const { presets, activeId, setActiveId } = usePresets();
   return (
-    <div className="grid grid-cols-4 items-center gap-1.5">
-      {presets.map((p: Preset) => (
+    <div className="grid grid-cols-3 gap-1.5">
+      {presets.map((p) => (
         <button
           key={p.id}
           onClick={() => setActiveId(p.id)}
           title={`Use ${p.id}`}
           className={cn(
-            "cursor-pointer rounded-lg border-[0.5px] py-1.5 text-xs font-medium transition-colors",
+            "cursor-pointer rounded-lg border-[0.5px] py-2 text-sm font-medium transition-colors",
             activeId === p.id
-              ? "border-brand/60 bg-brand/10 text-brand"
+              ? "border-transparent bg-secondary text-brand"
               : "border-transparent text-muted-foreground hover:text-foreground",
           )}
         >
           {p.id}
         </button>
       ))}
-      <button
-        onClick={onOpenAdvanced}
-        title={`Edit ${activeId} trade settings`}
-        className="grid cursor-pointer place-items-center py-1.5 text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <SlidersHorizontal className="size-3.5" />
-      </button>
-      <span className="sr-only">
-        {active.amount} · {active.slippage}%
-      </span>
     </div>
   );
 }
