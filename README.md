@@ -17,7 +17,7 @@ in the competitor comparison. Built for the Sigma frontend trial task.
 | --- | --- | --- |
 | — | **Trend column renders for every row**: the first two rows draw real OHLCV, the rest a deterministic synthetic series, because the free API will not serve one request per row | `components/pulse/Sparkline.tsx`, `lib/synthetic-ohlcv.ts`, `lib/gt.ts` |
 | A3 | **Row quick-buy shows the amount** (active preset) instead of being icon-only, with a compact confirm | `components/pulse/QuickBuyButton.tsx` |
-| — | **Display density** (comfortable / compact), persisted to localStorage | `components/pulse/Toolbar.tsx` |
+| — | **Display density** (comfortable / compact) | `components/pulse/Toolbar.tsx` |
 | A6 | **Multiple discovery lenses** (Trending / Surge / Recent) over the same live table | `App.tsx` |
 | B1 | **Instant Trade panel with slippage & priority presets + high-slippage warning** and MEV toggle | `components/pulse/TradePanel.tsx` |
 | — | **Settings → Quick Trades**: per-chain amounts grouped by quote currency, each labelled with its unit and a `≈$` value, a USD batch setter, and a fee-share warning | `components/settings/QuickTradesSection.tsx`, `lib/quick-trade-units.ts` |
