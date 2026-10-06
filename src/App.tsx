@@ -7,6 +7,7 @@ import { PulseTable } from "@/components/pulse/PulseTable";
 import { TradePanel } from "@/components/pulse/TradePanel";
 import { PresetsProvider } from "@/components/pulse/presets";
 import { QuickTradesProvider } from "@/components/settings/quickTrades";
+import { WalletsProvider } from "@/stores/wallets";
 import { SettingsPage } from "@/components/settings/SettingsPage";
 import { useTrending } from "@/hooks/useTrending";
 import type { NetworkId, WindowKey } from "@/lib/gt";
@@ -137,24 +138,26 @@ export default function App() {
   const [page, setPage] = useState<PageId>("Discover");
 
   return (
-    <PresetsProvider>
-      <QuickTradesProvider>
-        <div className="min-h-screen bg-canvas text-foreground">
-          <TopNav
-            active={page}
-            onNavigate={(next) => {
-              // Only the two built pages navigate. Pulse / Traders / Trading / … are
-              // not implemented in this build, so clicking them does nothing rather
-              // than silently showing a different page.
-              if (next === "Settings") setPage("Settings");
-              else if (next === "Discover") setPage("Discover");
-            }}
-          />
-          {page === "Settings" ? <SettingsPage /> : <DiscoverPage />}
-          <StatusBar />
-          <Toaster position="bottom-center" />
-        </div>
-      </QuickTradesProvider>
-    </PresetsProvider>
+    <WalletsProvider>
+      <PresetsProvider>
+        <QuickTradesProvider>
+          <div className="min-h-screen bg-canvas text-foreground">
+            <TopNav
+              active={page}
+              onNavigate={(next) => {
+                // Only the two built pages navigate. Pulse / Traders / Trading / … are
+                // not implemented in this build, so clicking them does nothing rather
+                // than silently showing a different page.
+                if (next === "Settings") setPage("Settings");
+                else if (next === "Discover") setPage("Discover");
+              }}
+            />
+            {page === "Settings" ? <SettingsPage /> : <DiscoverPage />}
+            <StatusBar />
+            <Toaster position="bottom-center" />
+          </div>
+        </QuickTradesProvider>
+      </PresetsProvider>
+    </WalletsProvider>
   );
 }

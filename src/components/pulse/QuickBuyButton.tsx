@@ -25,7 +25,7 @@ export function QuickBuyButton({ pool }: { pool: TrendingPool }) {
       setPending(false);
       setOpen(false);
       toast.success(`Bought ${active.amount} ${nativeSymbol(pool.network)} of ${pool.symbol}`, {
-        description: `Preset ${active.id} · slippage ${active.slippage}% · priority ${active.priority}`,
+        description: `Preset ${active.id} · slippage ${active.slippage}% · gas ${active.gas}`,
       });
     }, 500);
   }
@@ -114,7 +114,7 @@ export function QuickBuyButton({ pool }: { pool: TrendingPool }) {
               </span>
               <span className="flex items-center gap-1">
                 <Fuel className="size-3" />
-                {active.priority}
+                {active.gas}
               </span>
             </div>
 
